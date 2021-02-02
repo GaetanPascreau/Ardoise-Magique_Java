@@ -9,12 +9,16 @@ import java.awt.event.KeyEvent;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class Fenetre extends JFrame {
 
@@ -30,11 +34,11 @@ public class Fenetre extends JFrame {
 			rose = new JMenuItem("Rose"), violet = new JMenuItem("Violet"), gris = new JMenuItem("Gris"),
 			noir = new JMenuItem("Noir"), gomme = new JMenuItem("Gomme"), tailleXS = new JMenuItem("XS"),
 			tailleS = new JMenuItem("S"), tailleM = new JMenuItem("M"), tailleL = new JMenuItem("L"),
-			tailleXL = new JMenuItem("XL");
+			tailleXL = new JMenuItem("XL"), tailleXXL = new JMenuItem("XXL");
 
 	// LA BARRE D'OUTILS
 	JToolBar toolBar = new JToolBar();
-
+		
 	JButton square = new JButton(new ImageIcon("images/carré.jpg")),
 			circle = new JButton(new ImageIcon("images/rond.jpg")), arch = new JButton(new ImageIcon("images/arc.jpg")),
 			triangleForm = new JButton(new ImageIcon("images/triangle.jpg")),
@@ -46,24 +50,25 @@ public class Fenetre extends JFrame {
 			pink = new JButton(new ImageIcon("images/rose.jpg")),
 			magenta = new JButton(new ImageIcon("images/violet.jpg")),
 			gray = new JButton(new ImageIcon("images/gris.jpg")), black = new JButton(new ImageIcon("images/noir.jpg")),
-			eraser = new JButton(new ImageIcon("images/gomme2.png")),
-			sizeXS = new JButton(new ImageIcon("images/pinceauXS.png")),
-			sizeS = new JButton(new ImageIcon("images/pinceauS.png")),
-			sizeM = new JButton(new ImageIcon("images/pinceauM.png")),
-			sizeL = new JButton(new ImageIcon("images/pinceauL.png")),
-			sizeXL = new JButton(new ImageIcon("images/pinceauXL.png"));
+			eraser = new JButton(new ImageIcon("images/gomme2.png"));
+				
+	// Le  JSlider et son JLabel pour changer la taille du pinceau dans la barre d'outils
+	private JSlider slide = new JSlider();
+	private JLabel label = new JLabel("taille: 10");
 
 	// LES ÉCOUTEURS
 	private FormeListener fListener = new FormeListener();
 	private CouleurListener cListener = new CouleurListener();
 	private TailleListener tListener = new TailleListener();
+	private SliderListener sListener = new SliderListener();
 
 	// Notre zone de dessin
 	private DrawPanel drawPanel = new DrawPanel();
+		
 
 	public Fenetre() {
 		this.setTitle("Ardoise magique");
-		this.setSize(700, 500);
+		this.setSize(800, 500);
 		this.setLocationRelativeTo(null);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -135,11 +140,13 @@ public class Fenetre extends JFrame {
 		tailleM.addActionListener(tListener);
 		tailleL.addActionListener(tListener);
 		tailleXL.addActionListener(tListener);
+		tailleXXL.addActionListener(tListener);
 		taille.add(tailleXS);
 		taille.add(tailleS);
 		taille.add(tailleM);
 		taille.add(tailleL);
 		taille.add(tailleXL);
+		taille.add(tailleXXL);
 
 		edition.setMnemonic('E');
 		edition.add(forme);
@@ -175,11 +182,16 @@ public class Fenetre extends JFrame {
 		gray.addActionListener(cListener);
 		black.addActionListener(cListener);
 		eraser.addActionListener(cListener);
-		sizeXS.addActionListener(tListener);
-		sizeS.addActionListener(tListener);
-		sizeM.addActionListener(tListener);
-		sizeL.addActionListener(tListener);
-		sizeXL.addActionListener(tListener);
+				
+		slide.setMaximum(100);
+		slide.setMinimum(0);
+		slide.setValue(10);
+		slide.setPaintTicks(true);
+		slide.setPaintLabels(true);
+		slide.setMinorTickSpacing(10);
+		slide.setMajorTickSpacing(20);
+		slide.addChangeListener(sListener);
+		
 
 		toolBar.add(square);
 		toolBar.add(circle);
@@ -197,16 +209,14 @@ public class Fenetre extends JFrame {
 		toolBar.add(magenta);
 		toolBar.add(gray);
 		toolBar.add(black);
-
-		toolBar.addSeparator();
-		toolBar.add(sizeXS);
-		toolBar.add(sizeS);
-		toolBar.add(sizeM);
-		toolBar.add(sizeL);
-		toolBar.add(sizeXL);
-
 		toolBar.addSeparator();
 		toolBar.add(eraser);
+
+		toolBar.addSeparator();
+		toolBar.add(slide);
+		toolBar.addSeparator();
+		toolBar.add(label);
+		toolBar.addSeparator();
 
 		this.getContentPane().add(toolBar, BorderLayout.NORTH);
 	}
@@ -243,9 +253,7 @@ public class Fenetre extends JFrame {
 	// ÉCOUTEUR POUR LE CHANGEMENT DE COULEUR
 	class CouleurListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			System.out.println(e.getSource().getClass().getName());
 			if (e.getSource().getClass().getName().equals("javax.swing.JMenuItem")) {
-				System.out.println("OK !");
 				if (e.getSource() == vert)
 					drawPanel.setPointerColor(Color.green);
 				else if (e.getSource() == bleu)
@@ -291,32 +299,49 @@ public class Fenetre extends JFrame {
 		}
 	}
 
-//ÉCOUTEUR POUR LE CHANGEMENT DE TAILLE
+//ÉCOUTEUR POUR LE CHANGEMENT DE TAILLE via le menu
 	class TailleListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			if (e.getSource().getClass().getName().equals("javax.swing.JMenuItem")) {
-				if (e.getSource() == tailleXS)
+				if (e.getSource() == tailleXS){
 					drawPanel.setPointerSize(2);
-				else if (e.getSource() == tailleS)
+					label.setText("taille: 2");
+					slide.setValue(2);
+					}
+				else if (e.getSource() == tailleS){
 					drawPanel.setPointerSize(5);
-				else if (e.getSource() == tailleM)
+					label.setText("taille: 5");
+					slide.setValue(5);
+					}
+				else if (e.getSource() == tailleM){
 					drawPanel.setPointerSize(10);
-				else if (e.getSource() == tailleL)
+					label.setText("taille: 10");
+					slide.setValue(10);
+					}
+				else if (e.getSource() == tailleL){
 					drawPanel.setPointerSize(20);
-				else if (e.getSource() == tailleXL)
+					label.setText("taille: 20");
+					slide.setValue(20);
+					}
+				else if (e.getSource() == tailleXL){
 					drawPanel.setPointerSize(50);
-			} else {
-				if (e.getSource() == sizeXS)
-					drawPanel.setPointerSize(2);
-				else if (e.getSource() == sizeS)
-					drawPanel.setPointerSize(5);
-				else if (e.getSource() == sizeM)
-					drawPanel.setPointerSize(10);
-				else if (e.getSource() == sizeL)
-					drawPanel.setPointerSize(20);
-				else if (e.getSource() == sizeXL)
-					drawPanel.setPointerSize(50);
+					label.setText("taille: 50");
+					slide.setValue(50);
+					}
+				else if (e.getSource() == tailleXXL){
+					drawPanel.setPointerSize(100);
+					label.setText("taille: 100");
+					slide.setValue(100);
+					}
 			}
 		}
 	}
+	
+	//ÉCOUTEUR POUR LE CHANGEMENT DE TAILLE via le Slider de la barre d'outils
+		class SliderListener implements ChangeListener {
+			public void stateChanged(ChangeEvent event) {
+				label.setText("taille: " + ((JSlider)event.getSource()).getValue());
+				drawPanel.setPointerSize(((JSlider)event.getSource()).getValue());
+			}
+		}
 }
